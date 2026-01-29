@@ -1,6 +1,9 @@
 {
   "name": "byline",
   "private": true,
+  "engines": {
+    "node": "18.x"
+  },
   "scripts": {
     "relay": "rake graphql_schema && relay-compiler --src ./client --schema ./schema.json --extensions js jsx",
     "webpack": "webpack --env.production",
@@ -69,12 +72,12 @@
     "graphql": "^14.1.1",
     "imports-loader": "^0.8.0",
     "mini-css-extract-plugin": "^0.5.0",
-    "node-sass": "^4.10.0",
     "postcss-import": "^12.0.1",
     "postcss-loader": "^3.0.0",
     "relay-compiler": "^2.0.0",
     "remote-redux-devtools": "^0.5.12",
-    "sass-loader": "^7.1.0",
+    "sass": "^1.57.0",
+    "sass-loader": "^10.0.0",
     "style-loader": "^0.23.1",
     "sugarss": "^2.0.0",
     "webpack": "^4.12.1",
