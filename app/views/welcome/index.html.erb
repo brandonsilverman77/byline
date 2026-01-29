@@ -1,0 +1,26 @@
+
+<%
+props = {
+    assets: {
+      bgBig: image_url("bg_typewriter_2_2x.jpg"),
+      bgSmall: image_url("bg_typewriter_2_1x.jpg"),
+      logo: image_url("logo.png"),
+      logoWhite: image_url("logo-white.png"),
+      logoBeta: image_url("logo-beta.svg"),
+      whiteFeather: image_url("white-feather.png"),
+      colorFeather: image_url("feather-color.png")
+    }
+}
+
+
+@store_props = @store_props.merge props
+%>
+
+
+<div id="react-foundation"></div>
+
+<script>
+  window.storeProps = JSON.parse('<%= "#{@store_props.to_json}".html_safe %>')
+</script>
+
+

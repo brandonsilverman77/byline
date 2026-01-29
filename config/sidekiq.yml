@@ -1,0 +1,11 @@
+---
+:concurrency: 5
+:queues:
+  - critical
+  - mailers
+  - default
+  - low
+staging:
+  :concurrency: 10
+production:
+  :concurrency: 20

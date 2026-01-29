@@ -1,0 +1,3 @@
+class TaskFailureError < StandardError
+
+end
