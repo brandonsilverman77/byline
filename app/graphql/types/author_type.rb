@@ -1,6 +1,6 @@
 module Types
   class AuthorType < Types::BaseObject
-    implements GraphQL::Relay::Node.interface
+    implements GraphQL::Types::Relay::Node
     
     global_id_field :id
     field :name, String, null: true
@@ -10,28 +10,31 @@ module Types
     field :twitter_profile_image_url, String, null: true
     field :twitter_id, String, null: true
     field :featured, Boolean, null: false
-    field :object_id, Integer, null: false, resolve: ->(obj, args, ctx) do 
-      obj.id
-    end    
+    field :object_id, Integer, null: false
     
+    def object_id
+      object.id
+    end
+
     field :articles, ArticleType.connection_type, null: false
-    field :category_ids, [Integer], null: false, resolve: ->(obj, args, ctx) do 
-        obj.author_categories.pluck(:category_id)
+    field :category_ids, [Integer], null: false
+    
+    def category_ids
+      object.author_categories.pluck(:category_id)
     end
     
-    field :subscribed, Boolean, null: false, resolve: ->(obj, args, ctx) do 
-      viewer = ctx[:viewer]
-      if viewer.nil?
-        return false
-      end
-      
-      viewer.is_subscribed? to: obj
+    field :subscribed, Boolean, null: false
+    
+    def subscribed
+      viewer = context[:viewer]
+      return false if viewer.nil?
+      viewer.is_subscribed? to: object
     end
     
-    field :domains, DomainType.connection_type, null: false, resolve: ->(obj, args, ctx) do 
-      obj.domains
+    field :domains, DomainType.connection_type, null: false
+    
+    def domains
+      object.domains
     end
-    
-    
   end
 end
