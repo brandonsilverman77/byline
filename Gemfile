@@ -6,7 +6,6 @@ ruby '3.1.4'
 gem 'graphql'
 ## custom
 gem 'sidekiq'
-gem "securerandom"
 gem 'autoprefixer-rails'
 gem 'mailgun-ruby', '~>1.1.6'
 gem 'jwt'
