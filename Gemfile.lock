@@ -131,7 +131,7 @@ GEM
     nio4r (2.3.1)
     nokogiri (1.8.3)
       mini_portile2 (~> 2.3.0)
-    passgen (1.0.2)
+    passgen (1.0.3)
     pg (1.0.0)
     props (1.2.0)
       iniparser (>= 0.1.0)
