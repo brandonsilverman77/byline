@@ -1,13 +1,8 @@
-// @import url("https://use.typekit.net/tpo1tfw.css");
+// Google Fonts
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Playfair+Display:ital,wght@0,400;0,700;0,900;1,400;1,700&display=swap');
+
+// Legacy fonts (keeping for compatibility)
 @import url('https://fonts.googleapis.com/css?family=Open+Sans:400,700');
-
-// @font-face {
-//   font-family: 'Pacifico';
-//   font-style: normal;
-//   font-weight: 400;
-//   src:  url('/fonts/Pacifico-Regular.ttf') format('truetype');
-// }
-
 
 @font-face {
   font-family:"TKPacifico";
@@ -20,6 +15,15 @@
 
 .tk-pacifico { font-family: "TKPacifico",sans-serif; }
 
+// New color palette
+$gold: #D4A012;
+$gold-bright: #FFCC00;
+$ink: #0A0A0A;
+$ink-medium: #1A1A1A;
+$cream: #F8F4E8;
+$white: #FFFFFF;
+
+// Legacy colors (keeping for compatibility)
 $blue: #26547C;
 $red: #F1705A;
 $green: #06D6A0;
@@ -29,5 +33,23 @@ $orange: #FFBB41;
 $wax: #fffff6;
 $lightblue: #5fbad4;
 $ash: #3e3e44;
-$header_font: 'TKPacifico', 'Oswald', sans-serif;
-$body_font: 'Open Sans', sans-serif;
+
+// Typography
+$header_font: 'Playfair Display', 'TKPacifico', serif;
+$body_font: 'Inter', 'Open Sans', sans-serif;
+
+// Base styles
+html, body {
+  margin: 0;
+  padding: 0;
+}
+
+body {
+  font-family: $body_font;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+*, *::before, *::after {
+  box-sizing: border-box;
+}
