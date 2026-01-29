@@ -1,7 +1,7 @@
 require 'open-uri'
 
 
-class RSSReader
+class RssReader
   
   def read(uri) 
     txt = open(uri).read
