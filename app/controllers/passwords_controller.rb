@@ -41,8 +41,13 @@ class PasswordsController < ApplicationController
     end
 
     begin
+      Rails.logger.info "PASSWORD RESET: Attempting to decode token: #{token[0..50]}..."
+      Rails.logger.info "PASSWORD RESET: JWT_SALT present: #{Rails.application.secrets.JWT_SALT.present?}"
+
       decoded_token = JWT.decode(token, Rails.application.secrets.JWT_SALT, true, { algorithm: 'HS256' })
       email = decoded_token[0]["email"]
+      Rails.logger.info "PASSWORD RESET: Decoded email: #{email}"
+
       user = User.find_by(email: email)
 
       if user
@@ -52,10 +57,15 @@ class PasswordsController < ApplicationController
       else
         render json: { error: "User not found" }, status: :not_found
       end
-    rescue JWT::ExpiredSignature
+    rescue JWT::ExpiredSignature => e
+      Rails.logger.error "PASSWORD RESET: Token expired - #{e.message}"
       render json: { error: "This reset link has expired. Please request a new one." }, status: :unprocessable_entity
-    rescue JWT::DecodeError
+    rescue JWT::DecodeError => e
+      Rails.logger.error "PASSWORD RESET: Decode error - #{e.class}: #{e.message}"
       render json: { error: "Invalid reset link" }, status: :unprocessable_entity
+    rescue => e
+      Rails.logger.error "PASSWORD RESET: Unexpected error - #{e.class}: #{e.message}"
+      render json: { error: "An error occurred. Please try again." }, status: :internal_server_error
     end
   end
 end
