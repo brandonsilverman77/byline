@@ -253,11 +253,57 @@ namespace :authors do
     culture_cat = Category.find_by(label: 'culture')
     sports_cat = Category.find_by(label: 'sports')
 
-    # Keywords for auto-categorization
-    politics_keywords = %w[politics political policy economist government democracy congress senate legislation vote voting election president congress liberal conservative democrat republican]
-    tech_keywords = %w[tech technology software silicon programmer engineer startup crypto ai artificial intelligence platform digital internet web app developer]
-    culture_keywords = %w[culture writer author novelist book literature art music film movie television entertainment media critic creative]
-    sports_keywords = %w[sports basketball football baseball soccer hockey nba nfl mlb athlete game team player coach]
+    # Keywords for auto-categorization (expanded)
+    politics_keywords = %w[
+      politics political policy economist government democracy congress senate legislation
+      vote voting election president liberal conservative democrat republican washington
+      diplomacy foreign affairs geopolitics ukraine russia china nato democracy autocracy
+      columnist opinion editorial supreme court justice rights law attorney administration
+      white house capitol hill state department pentagon intelligence cia fbi national security
+    ]
+    tech_keywords = %w[
+      tech technology software silicon programmer engineer startup crypto ai artificial
+      intelligence platform digital internet web app developer venture capital vc fintech
+      blockchain machine learning data science computing cloud amazon google apple microsoft
+      facebook meta twitter semiconductor chip hardware computing cybersecurity privacy
+      stratechery newsletter analyst
+    ]
+    culture_keywords = %w[
+      culture writer author novelist book literature art music film movie television
+      entertainment media critic creative essay poetry fiction nonfiction journalism
+      newsletter brain pickings marginalian curator ideas thinker philosophy substack
+      books reading literary review magazine atlantic new yorker
+    ]
+    sports_keywords = %w[
+      sports basketball football baseball soccer hockey nba nfl mlb athlete game team
+      player coach olympics espn athletic stadium championship league playoffs draft
+      trade injury roster standings
+    ]
+
+    # Manual category assignments for well-known authors whose bios may not have keywords
+    # Format: 'Author Name' => ['category1', 'category2']
+    manual_assignments = {
+      'Matthew Yglesias' => ['politics'],
+      'Ezra Klein' => ['politics'],
+      'Heather Cox Richardson' => ['politics'],
+      'Anne Applebaum' => ['politics'],
+      'Jamelle Bouie' => ['politics'],
+      'David French' => ['politics'],
+      'Ross Douthat' => ['politics'],
+      'Bret Stephens' => ['politics'],
+      'Paul Krugman' => ['politics'],
+      'Maureen Dowd' => ['politics'],
+      'Ben Thompson' => ['tech'],
+      'Casey Newton' => ['tech'],
+      'Kara Swisher' => ['tech'],
+      'Kevin Roose' => ['tech'],
+      'Charlie Warzel' => ['tech', 'politics'],
+      'Maria Popova' => ['culture'],
+      'Roxane Gay' => ['culture'],
+      'Chuck Klosterman' => ['culture'],
+      'Wesley Morris' => ['culture'],
+      'Ta-Nehisi Coates' => ['culture', 'politics'],
+    }
 
     updated_count = 0
     prolific_count = 0
@@ -276,6 +322,17 @@ namespace :authors do
           author.categories << prolific_category
           changes << 'prolific'
           prolific_count += 1
+        end
+      end
+
+      # Check manual assignments first
+      if manual_assignments[author.name]
+        manual_assignments[author.name].each do |cat_label|
+          cat = Category.find_by(label: cat_label)
+          if cat && !author.categories.include?(cat)
+            author.categories << cat
+            changes << cat_label
+          end
         end
       end
 
@@ -329,10 +386,47 @@ namespace :authors do
     puts "AUTO-CATEGORIZATION PREVIEW (DRY RUN)"
     puts "=" * 60
 
-    politics_keywords = %w[politics political policy economist government democracy]
-    tech_keywords = %w[tech technology software silicon programmer startup crypto ai]
-    culture_keywords = %w[culture writer author novelist book literature art music film]
-    sports_keywords = %w[sports basketball football baseball soccer hockey nba nfl]
+    # Same keywords as the main task
+    politics_keywords = %w[
+      politics political policy economist government democracy congress senate legislation
+      vote voting election president liberal conservative democrat republican washington
+      diplomacy foreign affairs geopolitics columnist opinion editorial
+    ]
+    tech_keywords = %w[
+      tech technology software silicon programmer engineer startup crypto ai artificial
+      intelligence platform digital internet web app developer venture capital stratechery
+    ]
+    culture_keywords = %w[
+      culture writer author novelist book literature art music film movie television
+      entertainment media critic creative essay brain pickings marginalian
+    ]
+    sports_keywords = %w[
+      sports basketball football baseball soccer hockey nba nfl mlb athlete
+    ]
+
+    # Manual assignments
+    manual_assignments = {
+      'Matthew Yglesias' => ['politics'],
+      'Ezra Klein' => ['politics'],
+      'Heather Cox Richardson' => ['politics'],
+      'Anne Applebaum' => ['politics'],
+      'Jamelle Bouie' => ['politics'],
+      'David French' => ['politics'],
+      'Ross Douthat' => ['politics'],
+      'Bret Stephens' => ['politics'],
+      'Paul Krugman' => ['politics'],
+      'Maureen Dowd' => ['politics'],
+      'Ben Thompson' => ['tech'],
+      'Casey Newton' => ['tech'],
+      'Kara Swisher' => ['tech'],
+      'Kevin Roose' => ['tech'],
+      'Charlie Warzel' => ['tech', 'politics'],
+      'Maria Popova' => ['culture'],
+      'Roxane Gay' => ['culture'],
+      'Chuck Klosterman' => ['culture'],
+      'Wesley Morris' => ['culture'],
+      'Ta-Nehisi Coates' => ['culture', 'politics'],
+    }
 
     Author.where(featured: true).find_each do |author|
       changes = []
@@ -346,17 +440,23 @@ namespace :authors do
         changes << 'prolific'
       end
 
+      # Check manual assignments
+      if manual_assignments[author.name]
+        changes += manual_assignments[author.name]
+      end
+
       bio_lower = (author.bio || '').downcase
       changes << 'politics' if politics_keywords.any? { |kw| bio_lower.include?(kw) }
       changes << 'tech' if tech_keywords.any? { |kw| bio_lower.include?(kw) }
       changes << 'culture' if culture_keywords.any? { |kw| bio_lower.include?(kw) }
       changes << 'sports' if sports_keywords.any? { |kw| bio_lower.include?(kw) }
 
+      changes.uniq!
       current_cats = author.categories.pluck(:label)
       new_cats = changes - current_cats
 
       if new_cats.any?
-        puts "  #{author.name}:"
+        puts "  #{author.name} (#{per_week.round(2)}/week):"
         puts "    Current: [#{current_cats.join(', ')}]"
         puts "    Would add: [#{new_cats.join(', ')}]"
         puts "    Bio: #{author.bio&.truncate(80) || '(no bio)'}"
@@ -366,6 +466,31 @@ namespace :authors do
     puts "\n" + "=" * 60
     puts "Run 'rake authors:auto_categorize' to apply."
     puts "=" * 60
+  end
+
+  desc "Mark all prolific authors (0.5+ articles/week) as featured"
+  task :mark_prolific_featured => :environment do
+    puts "=" * 60
+    puts "MARKING PROLIFIC AUTHORS AS FEATURED"
+    puts "=" * 60
+
+    count = 0
+    Author.find_each do |author|
+      recent = author.articles.where('published_at > ?', 90.days.ago).count
+      weeks = 90.0 / 7.0
+      per_week = recent / weeks
+
+      if per_week >= 0.5 && !author.featured
+        author.update!(featured: true)
+        puts "  Marked as featured: #{author.name} (#{per_week.round(2)}/week)"
+        count += 1
+      end
+    end
+
+    puts "\n" + "=" * 60
+    puts "COMPLETE"
+    puts "=" * 60
+    puts "Total newly marked as featured: #{count}"
   end
 end
 
