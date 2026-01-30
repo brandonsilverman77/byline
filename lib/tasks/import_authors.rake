@@ -1,5 +1,118 @@
 require 'csv'
 
+namespace :authors do
+  desc "Backfill: Match existing articles to featured authors"
+  task :backfill_matches => :environment do
+    puts "=" * 60
+    puts "BACKFILL: MATCHING ARTICLES TO FEATURED AUTHORS"
+    puts "=" * 60
+
+    featured_authors = Author.where(featured: true)
+    puts "Featured authors to match against: #{featured_authors.count}"
+    puts "Featured author names: #{featured_authors.pluck(:name).join(', ')}"
+
+    total_articles = Article.count
+    matched_articles = 0
+    new_links_created = 0
+    processed = 0
+
+    puts "\nProcessing #{total_articles} articles..."
+
+    Article.includes(:authors).find_each do |article|
+      processed += 1
+
+      # Get all bylines from this article's existing authors
+      bylines = article.authors.pluck(:name)
+
+      # Try to match each byline against featured authors
+      bylines.each do |byline|
+        matched_featured = Author.match_byline_to_featured(byline)
+
+        matched_featured.each do |featured_author|
+          # Check if this article is already linked to this featured author
+          unless article.authors.include?(featured_author)
+            article.authors << featured_author
+            new_links_created += 1
+            puts "  [MATCH] '#{article.title&.truncate(40)}' -> #{featured_author.name}"
+          end
+        end
+
+        matched_articles += 1 if matched_featured.any?
+      end
+
+      # Progress indicator
+      if processed % 1000 == 0
+        puts "  Processed #{processed}/#{total_articles} articles..."
+      end
+    end
+
+    puts "\n" + "=" * 60
+    puts "BACKFILL COMPLETE"
+    puts "=" * 60
+    puts "Articles processed: #{processed}"
+    puts "Articles with matches: #{matched_articles}"
+    puts "New author-article links created: #{new_links_created}"
+  end
+
+  desc "Preview: Show which articles would match featured authors (dry run)"
+  task :backfill_preview => :environment do
+    puts "=" * 60
+    puts "BACKFILL PREVIEW (DRY RUN)"
+    puts "=" * 60
+
+    featured_authors = Author.where(featured: true)
+    puts "Featured authors to match against: #{featured_authors.count}"
+
+    # Show a sample of what would match
+    sample_matches = {}
+
+    Article.includes(:authors).limit(10000).find_each do |article|
+      bylines = article.authors.pluck(:name)
+
+      bylines.each do |byline|
+        matched_featured = Author.match_byline_to_featured(byline)
+
+        matched_featured.each do |featured_author|
+          unless article.authors.include?(featured_author)
+            sample_matches[featured_author.name] ||= []
+            if sample_matches[featured_author.name].length < 3
+              sample_matches[featured_author.name] << {
+                title: article.title&.truncate(50),
+                byline: byline
+              }
+            end
+          end
+        end
+      end
+    end
+
+    puts "\nSample matches found:"
+    sample_matches.each do |author_name, matches|
+      puts "\n#{author_name}:"
+      matches.each do |match|
+        puts "  - '#{match[:title]}' (byline: #{match[:byline]})"
+      end
+    end
+
+    puts "\n" + "=" * 60
+    puts "This was a preview. Run 'rake authors:backfill_matches' to apply."
+    puts "=" * 60
+  end
+
+  desc "Show stats on featured author article coverage"
+  task :coverage_report => :environment do
+    puts "=" * 60
+    puts "FEATURED AUTHOR COVERAGE REPORT"
+    puts "=" * 60
+
+    Author.where(featured: true).order(:name).each do |author|
+      article_count = author.articles.count
+      recent_count = author.articles.where('published_at > ?', 30.days.ago).count
+      puts "#{author.name}: #{article_count} articles (#{recent_count} in last 30 days)"
+    end
+  end
+end
+
 namespace :cleanup do
   desc "Clean up duplicate and malformed author names"
   task :authors => :environment do

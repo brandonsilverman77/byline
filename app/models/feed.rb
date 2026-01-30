@@ -52,12 +52,35 @@ class Feed < ApplicationRecord
     article = result.article
     domain = result.domain
 
-    article.authors << authors 
-    article.domain = domain 
+    # Get the raw byline string from the authors
+    raw_byline = authors.map(&:name).join(', ')
+
+    # Match against featured authors
+    featured_matches = Author.match_byline_to_featured(raw_byline)
+
+    # If we found featured author matches, link them to the article
+    if featured_matches.any?
+      featured_matches.each do |featured_author|
+        # Avoid duplicates
+        unless article.authors.include?(featured_author)
+          article.authors << featured_author
+        end
+      end
+      logger.info "Matched article '#{article.title&.truncate(50)}' to featured authors: #{featured_matches.map(&:name).join(', ')}"
+    end
+
+    # Also keep the original author associations (the raw byline authors)
+    authors.each do |author|
+      unless article.authors.include?(author)
+        article.authors << author
+      end
+    end
+
+    article.domain = domain
     article.feed = self
-    
+
     article.save
-    
+
     logger.info "Saving #{article}..."
   end
   

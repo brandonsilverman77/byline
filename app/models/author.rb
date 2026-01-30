@@ -61,8 +61,45 @@ class Author < ApplicationRecord
     "#{self.name}"
   end
   
-  def self.featured 
+  def self.featured
     where(featured: true)
+  end
+
+  # Normalize a name for comparison (lowercase, single spaces)
+  def self.normalize_name(name)
+    name.to_s.strip.downcase.gsub(/\s+/, ' ')
+  end
+
+  # Find a featured author that matches the given name (case-insensitive)
+  # Returns nil if no match found
+  def self.find_featured_match(name)
+    return nil if name.blank?
+
+    normalized_input = normalize_name(name)
+    return nil if normalized_input.empty?
+
+    # First try exact normalized match for efficiency
+    featured.find do |author|
+      normalize_name(author.name) == normalized_input
+    end
+  end
+
+  # Find all featured authors that match any of the names in a byline
+  # Uses BylineParser to split compound bylines
+  def self.match_byline_to_featured(byline)
+    return [] if byline.blank?
+
+    # Parse the byline into individual names
+    individual_names = BylineParser.parse(byline)
+
+    # Find featured authors for each name
+    matched_authors = []
+    individual_names.each do |name|
+      author = find_featured_match(name)
+      matched_authors << author if author
+    end
+
+    matched_authors.uniq
   end
   
   def featured!
