@@ -458,8 +458,17 @@ TSV
         author = Author.find_by(name: full_name)
         if author
           # Update bio if it was empty or different
+          changed = false
           if author.bio.nil? || author.bio.empty?
             author.bio = description
+            changed = true
+          end
+          # Always ensure featured is true for imported authors
+          unless author.featured
+            author.featured = true
+            changed = true
+          end
+          if changed
             author.save!
             puts "  [UPDATE] Author updated: #{full_name}"
             updated_authors += 1
@@ -532,8 +541,17 @@ TSV
         author = Author.find_by(name: full_name)
         if author
           # Update bio if it was empty or different
+          changed = false
           if author.bio.nil? || author.bio.empty?
             author.bio = description
+            changed = true
+          end
+          # Always ensure featured is true for imported authors
+          unless author.featured
+            author.featured = true
+            changed = true
+          end
+          if changed
             author.save!
             puts "  [UPDATE] Author updated: #{full_name}"
             updated_authors += 1
