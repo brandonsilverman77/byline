@@ -11,6 +11,34 @@ const GET_ADMIN_STATS = gql`
         totalSubscriptions
         totalAuthors
         totalFeeds
+        allUsers {
+          objectId
+          email
+          status
+          createdAt
+          subscriptionCount
+        }
+        activeUsersList {
+          objectId
+          email
+          status
+          createdAt
+          subscriptionCount
+        }
+        usersWithSubscriptionsList {
+          objectId
+          email
+          status
+          createdAt
+          subscriptionCount
+        }
+        inactiveUsersList {
+          objectId
+          email
+          status
+          createdAt
+          subscriptionCount
+        }
       }
     }
   }
@@ -24,10 +52,74 @@ const CREATE_FEED = gql`
   }
 `
 
+function UserListModal({ isOpen, onClose, title, users }) {
+  if (!isOpen) return null
+
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center">
+      <div
+        className="absolute inset-0 bg-black/70 backdrop-blur-sm"
+        onClick={onClose}
+      />
+      <div className="relative bg-byline-black border border-white/10 rounded-2xl p-6 w-full max-w-2xl mx-4 max-h-[80vh] overflow-hidden flex flex-col">
+        <div className="flex items-center justify-between mb-4">
+          <h3 className="font-display text-xl font-bold text-white">{title}</h3>
+          <button
+            onClick={onClose}
+            className="text-white/40 hover:text-white transition-colors"
+          >
+            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <div className="text-white/50 text-sm mb-4">
+          {users?.length || 0} users
+        </div>
+
+        <div className="overflow-y-auto flex-1">
+          <table className="w-full">
+            <thead className="sticky top-0 bg-byline-black">
+              <tr className="text-left text-white/50 text-sm border-b border-white/10">
+                <th className="pb-2 pr-4">Email</th>
+                <th className="pb-2 pr-4">Status</th>
+                <th className="pb-2 pr-4">Follows</th>
+                <th className="pb-2">Joined</th>
+              </tr>
+            </thead>
+            <tbody>
+              {users?.map((u) => (
+                <tr key={u.objectId} className="border-b border-white/5 hover:bg-white/5">
+                  <td className="py-3 pr-4 text-white text-sm">{u.email}</td>
+                  <td className="py-3 pr-4">
+                    <span className={`text-xs px-2 py-1 rounded-full ${
+                      u.status === 'active'
+                        ? 'bg-green-500/20 text-green-400'
+                        : 'bg-red-500/20 text-red-400'
+                    }`}>
+                      {u.status}
+                    </span>
+                  </td>
+                  <td className="py-3 pr-4 text-white/70 text-sm">{u.subscriptionCount}</td>
+                  <td className="py-3 text-white/50 text-sm">
+                    {new Date(u.createdAt).toLocaleDateString()}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export default function Admin({ user }) {
   const [url, setUrl] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+  const [selectedStat, setSelectedStat] = useState(null)
 
   const { data: statsData, loading: statsLoading } = useQuery(GET_ADMIN_STATS, {
     skip: !user,
@@ -73,6 +165,21 @@ export default function Admin({ user }) {
     })
   }
 
+  const getModalData = () => {
+    switch (selectedStat) {
+      case 'totalUsers':
+        return { title: 'All Users', users: stats?.allUsers }
+      case 'activeUsers':
+        return { title: 'Active Users', users: stats?.activeUsersList }
+      case 'usersWithSubscriptions':
+        return { title: 'Users with Subscriptions', users: stats?.usersWithSubscriptionsList }
+      case 'inactiveUsers':
+        return { title: 'Inactive Users', users: stats?.inactiveUsersList }
+      default:
+        return { title: '', users: [] }
+    }
+  }
+
   // Check if user is admin
   if (!user) {
     return (
@@ -81,6 +188,8 @@ export default function Admin({ user }) {
       </div>
     )
   }
+
+  const modalData = getModalData()
 
   return (
     <div className="min-h-screen pt-24 px-6">
@@ -106,18 +215,27 @@ export default function Admin({ user }) {
             </div>
           ) : stats ? (
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
-              <div className="bg-white/5 rounded-lg p-4">
+              <button
+                onClick={() => setSelectedStat('totalUsers')}
+                className="bg-white/5 rounded-lg p-4 text-left hover:bg-white/10 transition-colors cursor-pointer"
+              >
                 <div className="text-3xl font-bold text-byline-gold">{stats.totalUsers}</div>
                 <div className="text-white/50 text-sm">Total Users</div>
-              </div>
-              <div className="bg-white/5 rounded-lg p-4">
+              </button>
+              <button
+                onClick={() => setSelectedStat('activeUsers')}
+                className="bg-white/5 rounded-lg p-4 text-left hover:bg-white/10 transition-colors cursor-pointer"
+              >
                 <div className="text-3xl font-bold text-byline-gold">{stats.activeUsers}</div>
                 <div className="text-white/50 text-sm">Active Users</div>
-              </div>
-              <div className="bg-white/5 rounded-lg p-4">
+              </button>
+              <button
+                onClick={() => setSelectedStat('usersWithSubscriptions')}
+                className="bg-white/5 rounded-lg p-4 text-left hover:bg-white/10 transition-colors cursor-pointer"
+              >
                 <div className="text-3xl font-bold text-byline-gold">{stats.usersWithSubscriptions}</div>
-                <div className="text-white/50 text-sm">Users with Subscriptions</div>
-              </div>
+                <div className="text-white/50 text-sm">Users with Subs</div>
+              </button>
               <div className="bg-white/5 rounded-lg p-4">
                 <div className="text-3xl font-bold text-byline-gold">{stats.totalSubscriptions}</div>
                 <div className="text-white/50 text-sm">Total Subscriptions</div>
@@ -180,6 +298,13 @@ export default function Admin({ user }) {
           </form>
         </div>
       </div>
+
+      <UserListModal
+        isOpen={!!selectedStat}
+        onClose={() => setSelectedStat(null)}
+        title={modalData.title}
+        users={modalData.users}
+      />
     </div>
   )
 }
