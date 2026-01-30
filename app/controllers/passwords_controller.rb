@@ -19,8 +19,8 @@ class PasswordsController < ApplicationController
         'HS256'
       )
 
-      # Send password reset email
-      PasswordMailer.with(user: user, token: token).reset_password_email.deliver_later
+      # Send password reset email synchronously (avoid Sidekiq Redis issues)
+      PasswordMailer.with(user: user, token: token).reset_password_email.deliver_now
     end
 
     # Always return success to prevent email enumeration
