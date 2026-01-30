@@ -65,12 +65,23 @@ class Author < ApplicationRecord
     where(featured: true)
   end
 
+  # Name aliases for matching variations of author names
+  # Maps normalized alias -> normalized canonical name (the featured author's name)
+  # Note: We map short names to long names since articles tend to use full names
+  NAME_ALIASES = {
+    # Matt -> Matthew (articles use "Matthew Yglesias")
+    'matt yglesias' => 'matthew yglesias',
+    # Heather Richardson -> Heather Cox Richardson (articles use full name)
+    'heather richardson' => 'heather cox richardson',
+  }.freeze
+
   # Normalize a name for comparison (lowercase, single spaces)
   def self.normalize_name(name)
     name.to_s.strip.downcase.gsub(/\s+/, ' ')
   end
 
   # Find a featured author that matches the given name (case-insensitive)
+  # Also checks aliases for common name variations
   # Returns nil if no match found
   def self.find_featured_match(name)
     return nil if name.blank?
@@ -78,9 +89,25 @@ class Author < ApplicationRecord
     normalized_input = normalize_name(name)
     return nil if normalized_input.empty?
 
-    # First try exact normalized match for efficiency
+    # Build a list of names to try (original + any aliases)
+    names_to_try = [normalized_input]
+
+    # Check if this name is an alias for something else
+    if NAME_ALIASES.key?(normalized_input)
+      names_to_try << NAME_ALIASES[normalized_input]
+    end
+
+    # Also check reverse: if a featured author's name is an alias
+    NAME_ALIASES.each do |alias_name, canonical_name|
+      if canonical_name == normalized_input
+        names_to_try << alias_name
+      end
+    end
+
+    # Try to find a match for any of the name variations
     featured.find do |author|
-      normalize_name(author.name) == normalized_input
+      author_normalized = normalize_name(author.name)
+      names_to_try.include?(author_normalized)
     end
   end
 

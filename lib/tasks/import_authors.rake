@@ -111,6 +111,59 @@ namespace :authors do
       puts "#{author.name}: #{article_count} articles (#{recent_count} in last 30 days)"
     end
   end
+
+  desc "Merge duplicate featured authors (keeps the one with more articles)"
+  task :merge_duplicates => :environment do
+    puts "=" * 60
+    puts "MERGING DUPLICATE FEATURED AUTHORS"
+    puts "=" * 60
+
+    # Define duplicates to merge: [keep_name, remove_name]
+    duplicates = [
+      ['Matthew Yglesias', 'Matt Yglesias'],
+      ['Heather Cox Richardson', 'Heather Richardson'],
+    ]
+
+    duplicates.each do |keep_name, remove_name|
+      keep = Author.find_by(name: keep_name)
+      remove = Author.find_by(name: remove_name)
+
+      if keep && remove
+        puts "\nMerging '#{remove_name}' into '#{keep_name}'..."
+        puts "  Keep: ID=#{keep.id}, articles=#{keep.articles.count}, subscribers=#{keep.users.count}"
+        puts "  Remove: ID=#{remove.id}, articles=#{remove.articles.count}, subscribers=#{remove.users.count}"
+
+        # Transfer articles
+        AuthorArticle.where(author_id: remove.id).each do |aa|
+          unless AuthorArticle.exists?(author_id: keep.id, article_id: aa.article_id)
+            aa.update!(author_id: keep.id)
+          end
+        end
+
+        # Transfer subscriptions
+        UserAuthor.where(author_id: remove.id).each do |ua|
+          unless UserAuthor.exists?(author_id: keep.id, user_id: ua.user_id)
+            ua.update!(author_id: keep.id)
+          end
+        end
+
+        # Copy bio if keep doesn't have one
+        if keep.bio.blank? && remove.bio.present?
+          keep.update!(bio: remove.bio)
+        end
+
+        # Delete the duplicate
+        remove.destroy
+        puts "  Merged! '#{keep_name}' now has #{keep.reload.articles.count} articles"
+      else
+        puts "\nSkipping '#{keep_name}' / '#{remove_name}' - one or both not found"
+      end
+    end
+
+    puts "\n" + "=" * 60
+    puts "MERGE COMPLETE"
+    puts "=" * 60
+  end
 end
 
 namespace :cleanup do
