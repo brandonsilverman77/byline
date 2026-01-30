@@ -9,13 +9,13 @@ module Types
     field :domain_id, Integer, null: true
     field :feed_id, Integer, null: true
     field :author_ids, [Integer], null: false
-    field :db_id, Integer, null: false
+    field :object_id, Integer, null: false, resolver_method: :resolve_object_id, method_conflict_warning: false
 
     def author_ids
       object.author_articles.collect(&:author_id)
     end
 
-    def db_id
+    def resolve_object_id
       object.id
     end
   end
