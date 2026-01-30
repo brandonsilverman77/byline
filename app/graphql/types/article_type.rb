@@ -8,11 +8,15 @@ module Types
     field :link, String, null: true
     field :domain_id, Integer, null: true
     field :feed_id, Integer, null: true
-    field :author_ids, [Integer], null: false, resolve: ->(obj, args, ctx) do 
-      obj.author_articles.collect(&:author_id)
+    field :author_ids, [Integer], null: false
+    field :db_id, Integer, null: false
+
+    def author_ids
+      object.author_articles.collect(&:author_id)
     end
-    field :object_id, Integer, null: false, resolve: ->(obj, args, ctx) do 
-      obj.id
+
+    def db_id
+      object.id
     end
   end
 end
