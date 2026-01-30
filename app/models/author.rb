@@ -36,15 +36,17 @@ class Author < ApplicationRecord
     category_ids = params[:categories]
     has_search = search_term && search_term.length > 0
     has_categories = !category_ids.nil? && !category_ids.empty?
+
     if !has_search && !has_categories
-      self.featured
+      # Default: show featured authors sorted by recent article frequency
+      relation = self.featured
     else
       if has_search
         relation = self.where('name ILIKE ?', "%#{params[:search]}%")
-      end 
-      
+      end
+
       if has_categories
-        if !relation 
+        if !relation
           relation = self
         end
         relation = relation
@@ -52,9 +54,38 @@ class Author < ApplicationRecord
           .joins(:categories)
           .where("categories.id IN (?)", category_ids)
       end
-      
-      relation.group(:id).order(twitter_id: :asc)
+
+      relation = relation.group(:id)
     end
+
+    # Sort by recent article count (last 90 days), descending
+    # Authors who write more frequently appear first
+    sort_by_recent_articles(relation)
+  end
+
+  # Sort authors by their recent article count (most prolific first)
+  def self.sort_by_recent_articles(relation)
+    # Get the author IDs and their recent article counts
+    author_ids = relation.pluck(:id)
+    return [] if author_ids.empty?
+
+    # Count articles per author in the last 90 days
+    recent_counts = AuthorArticle
+      .joins(:article)
+      .where(author_id: author_ids)
+      .where('articles.published_at > ?', 90.days.ago)
+      .group(:author_id)
+      .count
+
+    # Sort author IDs by count (descending), then by name for ties
+    authors_by_id = relation.index_by(&:id)
+
+    sorted_authors = author_ids.map { |id| authors_by_id[id] }.compact.sort_by do |author|
+      count = recent_counts[author.id] || 0
+      [-count, author.name.to_s.downcase] # Negative count for descending order
+    end
+
+    sorted_authors
   end
   
   def to_s 
