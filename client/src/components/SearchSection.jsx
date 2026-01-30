@@ -25,7 +25,11 @@ export default function SearchSection({ user, onLoginRequired }) {
   const categories = categoriesData?.app?.categories?.nodes || []
 
   // Log categories for debugging
-  console.log('Categories data:', categoriesData, 'error:', categoriesError)
+  console.log('Categories loading:', categoriesLoading)
+  console.log('Categories data:', categoriesData)
+  console.log('Categories nodes:', categoriesData?.app?.categories?.nodes)
+  console.log('Categories array:', categories)
+  console.log('Categories error:', categoriesError)
 
   const shouldFetch = debouncedSearch || selectedCategory
   const { data: authorsData, loading: authorsLoading, error: authorsError } = useQuery(GET_AUTHORS, {
