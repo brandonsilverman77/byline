@@ -4,10 +4,11 @@ module Types
     
     global_id_field :id
     field :email, String, null: true
-    field :object_id, Integer, null: false, resolve: ->(obj, args, ctx) do 
-      obj.id
-    end
-    
+    field :db_id, Integer, null: false
     field :superadmin, Boolean, null: false
+
+    def db_id
+      object.id
+    end
   end
 end
