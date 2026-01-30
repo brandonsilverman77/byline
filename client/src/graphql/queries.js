@@ -6,8 +6,8 @@ export const GET_CATEGORIES = gql`
       categories {
         nodes {
           id
-          label
           objectId
+          label
         }
       }
     }
@@ -20,15 +20,19 @@ export const GET_AUTHORS = gql`
       authors(search: $search, categories: $categories) {
         nodes {
           id
-          name
           objectId
-          imageUrl
-          twitterHandle
+          name
           bio
+          twitterHandle
+          twitterProfileImageUrl
+          imageUrl
+          featured
           subscribed
+          categoryIds
           domains {
             nodes {
               id
+              objectId
               host
             }
           }
@@ -43,7 +47,9 @@ export const GET_CURRENT_USER = gql`
     app {
       user {
         id
+        objectId
         email
+        superadmin
       }
     }
   }

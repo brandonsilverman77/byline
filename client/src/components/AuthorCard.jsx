@@ -1,14 +1,15 @@
 export default function AuthorCard({ author, onFollow, isFollowing }) {
   const publications = author.domains?.nodes?.map(d => d.host).slice(0, 3) || []
+  const authorImage = author.twitterProfileImageUrl || author.imageUrl
 
   return (
     <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/[0.07] transition-all duration-200">
       <div className="flex items-start gap-4">
         {/* Author image */}
         <div className="flex-shrink-0">
-          {author.imageUrl ? (
+          {authorImage ? (
             <img
-              src={author.imageUrl}
+              src={authorImage}
               alt={author.name}
               className="w-16 h-16 rounded-full object-cover"
             />
