@@ -1,5 +1,174 @@
 require 'csv'
 
+namespace :cleanup do
+  desc "Clean up duplicate and malformed author names"
+  task :authors => :environment do
+    puts "=" * 60
+    puts "AUTHOR CLEANUP TASK"
+    puts "=" * 60
+
+    merged_count = 0
+    deleted_count = 0
+    cleaned_count = 0
+
+    # 1. Clean up repeated names like "Dave Zirin,Dave Zirin,Dave Zirin"
+    puts "\n--- Cleaning repeated comma-separated names ---"
+    Author.where("name LIKE '%,%'").find_each do |author|
+      parts = author.name.split(',').map(&:strip)
+      unique_parts = parts.uniq
+
+      # If all parts are the same name repeated
+      if unique_parts.length == 1 && parts.length > 1
+        clean_name = unique_parts.first
+
+        # Check if there's already an author with the clean name
+        existing = Author.where(name: clean_name).where.not(id: author.id).first
+
+        if existing
+          # Merge: transfer articles and subscriptions to existing, then delete duplicate
+          puts "  Merging '#{author.name[0..50]}...' into existing '#{clean_name}' (ID: #{existing.id})"
+
+          AuthorArticle.where(author_id: author.id).update_all(author_id: existing.id)
+          UserAuthor.where(author_id: author.id).update_all(author_id: existing.id)
+
+          author.destroy
+          merged_count += 1
+        else
+          # Just rename
+          puts "  Cleaning '#{author.name[0..50]}...' -> '#{clean_name}'"
+          author.update!(name: clean_name)
+          cleaned_count += 1
+        end
+      end
+    end
+
+    # 2. Delete empty/blank authors with no articles and no subscriptions
+    puts "\n--- Removing blank authors with no content ---"
+    blank_authors = Author.where("name IS NULL OR TRIM(name) = ''")
+    blank_authors.each do |author|
+      if author.articles.count == 0 && author.users.count == 0
+        puts "  Deleting blank author ID: #{author.id}"
+        author.destroy
+        deleted_count += 1
+      end
+    end
+
+    # 3. Report on remaining issues that need manual review
+    puts "\n--- Issues requiring manual review ---"
+
+    compound_names = Author.where("name LIKE '% and %'").count
+    puts "  Authors with 'and' in name (co-authors): #{compound_names}"
+
+    comma_names = Author.where("name LIKE '%,%'").count
+    puts "  Authors with commas in name: #{comma_names}"
+
+    puts "\n" + "=" * 60
+    puts "CLEANUP COMPLETE"
+    puts "=" * 60
+    puts "Authors merged into existing: #{merged_count}"
+    puts "Authors renamed/cleaned: #{cleaned_count}"
+    puts "Blank authors deleted: #{deleted_count}"
+    puts "\nNote: Co-author names (containing 'and') are not automatically"
+    puts "split as they may represent collaborative bylines."
+  end
+
+  desc "Show detailed report of author data quality issues"
+  task :authors_report => :environment do
+    puts "=" * 60
+    puts "AUTHOR DATA QUALITY REPORT"
+    puts "=" * 60
+
+    puts "\n--- Overall Stats ---"
+    puts "Total authors: #{Author.count}"
+    puts "Featured authors (imported with bios): #{Author.where(featured: true).count}"
+    puts "Authors with bios: #{Author.where.not(bio: [nil, '']).count}"
+
+    puts "\n--- Problematic Names ---"
+
+    # Repeated names
+    repeated = Author.where("name LIKE '%,%'").select { |a|
+      parts = a.name.split(',')
+      parts.uniq.length < parts.length
+    }
+    puts "Authors with repeated comma names (e.g., 'Name,Name,Name'): #{repeated.count}"
+    if repeated.count > 0 && repeated.count <= 5
+      repeated.each { |a| puts "  ##{a.id}: #{a.name[0..60]}" }
+    end
+
+    # Compound names
+    compound = Author.where("name LIKE '% and %'").count
+    puts "Authors with 'and' in name: #{compound}"
+
+    # Comma names (non-repeated)
+    comma_other = Author.where("name LIKE '%,%'").count - repeated.count
+    puts "Authors with commas (other patterns): #{comma_other}"
+
+    # Blank names
+    blank = Author.where("name IS NULL OR TRIM(name) = ''").count
+    puts "Authors with blank/empty names: #{blank}"
+
+    puts "\n--- Feed Coverage ---"
+    total_feeds = Feed.count
+    feeds_with_featured = Feed.joins(articles: :authors).where(authors: { featured: true }).distinct.count
+    puts "Total feeds: #{total_feeds}"
+    puts "Feeds with at least one featured author: #{feeds_with_featured}"
+    puts "Feeds without featured authors: #{total_feeds - feeds_with_featured}"
+
+    puts "\n--- Subscription Impact ---"
+    subscribed_authors = Author.joins(:user_authors).distinct.count
+    subscribed_featured = Author.where(featured: true).joins(:user_authors).distinct.count
+    puts "Total authors with subscriptions: #{subscribed_authors}"
+    puts "Featured authors with subscriptions: #{subscribed_featured}"
+  end
+
+  desc "Preview author cleanup (dry run, no changes)"
+  task :authors_preview => :environment do
+    puts "=" * 60
+    puts "AUTHOR CLEANUP PREVIEW (DRY RUN)"
+    puts "=" * 60
+
+    would_merge = 0
+    would_clean = 0
+    would_delete = 0
+
+    # 1. Check repeated names
+    puts "\n--- Would clean repeated comma-separated names ---"
+    Author.where("name LIKE '%,%'").find_each do |author|
+      parts = author.name.split(',').map(&:strip)
+      unique_parts = parts.uniq
+
+      if unique_parts.length == 1 && parts.length > 1
+        clean_name = unique_parts.first
+        existing = Author.where(name: clean_name).where.not(id: author.id).first
+
+        if existing
+          puts "  WOULD MERGE: '#{author.name[0..40]}...' (ID:#{author.id}) into existing '#{clean_name}' (ID:#{existing.id})"
+          would_merge += 1
+        else
+          puts "  WOULD RENAME: '#{author.name[0..40]}...' (ID:#{author.id}) -> '#{clean_name}'"
+          would_clean += 1
+        end
+      end
+    end
+
+    # 2. Check blank authors
+    puts "\n--- Would delete blank authors ---"
+    Author.where("name IS NULL OR TRIM(name) = ''").each do |author|
+      if author.articles.count == 0 && author.users.count == 0
+        puts "  WOULD DELETE: blank author ID:#{author.id}"
+        would_delete += 1
+      end
+    end
+
+    puts "\n" + "=" * 60
+    puts "PREVIEW SUMMARY (no changes made)"
+    puts "=" * 60
+    puts "Would merge: #{would_merge}"
+    puts "Would rename: #{would_clean}"
+    puts "Would delete: #{would_delete}"
+  end
+end
+
 namespace :import do
   desc "Import authors and feeds from CSV data"
   task :authors_csv, [:file_path] => :environment do |t, args|
