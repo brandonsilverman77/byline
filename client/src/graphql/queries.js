@@ -15,7 +15,7 @@ export const GET_CATEGORIES = gql`
 `
 
 export const GET_AUTHORS = gql`
-  query GetAuthors($search: String, $categories: [Int]) {
+  query GetAuthors($search: String, $categories: [Int!]) {
     app {
       authors(search: $search, categories: $categories) {
         nodes {
