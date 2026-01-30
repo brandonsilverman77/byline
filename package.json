@@ -5,10 +5,16 @@
     "node": "18.x"
   },
   "scripts": {
-    "relay": "rake graphql_schema && relay-compiler --src ./client --schema ./schema.json --extensions js jsx",
+    "relay": "rake graphql_schema && relay-compiler --src ./client-old --schema ./schema.json --extensions js jsx",
     "webpack": "NODE_OPTIONS=--openssl-legacy-provider webpack --env production",
     "watch": "webpack --watch --progress --info-verbosity verbose --env.development",
-    "serve": "yarn watch & rails s & sidekiq"
+    "serve": "yarn watch & rails s & sidekiq",
+    "dev": "cd client && npm run dev",
+    "vite:install": "cd client && npm install",
+    "vite:dev": "cd client && npm run dev",
+    "vite:build": "cd client && npm run build",
+    "build": "npm run vite:build",
+    "heroku-postbuild": "npm run vite:install && npm run vite:build"
   },
   "dependencies": {
     "@babel/plugin-proposal-class-properties": "^7.3.3",

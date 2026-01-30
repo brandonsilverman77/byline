@@ -10,9 +10,17 @@ namespace :yarn do
   task :install do
     system('./bin/yarn')
   end
-  task :webpack do 
+  task :webpack do
     system('bundle exec ./bin/yarn webpack')
   end
 end
 
-Rake::Task['assets:precompile'].enhance [ 'yarn:webpack' ]
+namespace :vite do
+  desc "Build Vite frontend"
+  task :build do
+    system('cd client && npm install && npm run build')
+  end
+end
+
+# Use Vite build for assets:precompile
+Rake::Task['assets:precompile'].enhance [ 'vite:build' ]

@@ -20,9 +20,11 @@ webpack-cache
 /storage/*
 
 /node_modules
+/client/node_modules
 /yarn-error.log
 
 /public/assets
+/public/vite
 .byebug_history
 
 # Ignore master key for decrypting credentials and more.

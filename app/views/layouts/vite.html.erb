@@ -1,0 +1,39 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Byline - Follow the writers you love</title>
+    <meta name="description" content="Track your favorite journalists across every publication. One daily email with all their latest stories." />
+    <%= csrf_meta_tags %>
+
+    <!-- Open Graph -->
+    <meta property="og:title" content="Byline - Follow the writers you love" />
+    <meta property="og:description" content="Track your favorite journalists across every publication. One daily email with all their latest stories." />
+    <meta property="og:type" content="website" />
+
+    <!-- Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Playfair+Display:ital,wght@0,700;0,900;1,700;1,900&display=swap" rel="stylesheet">
+
+    <%
+      # Check for production manifest
+      manifest_path = Rails.root.join('public', 'vite', '.vite', 'manifest.json')
+      manifest = File.exist?(manifest_path) ? JSON.parse(File.read(manifest_path)) : {}
+      use_vite_dev = Rails.env.development? && manifest.empty?
+    %>
+    <% if use_vite_dev %>
+      <!-- Vite Dev Server -->
+      <script type="module" src="http://localhost:5173/@vite/client"></script>
+      <script type="module" src="http://localhost:5173/src/main.jsx"></script>
+    <% elsif manifest['src/main.jsx'] %>
+      <!-- Production Vite Assets -->
+      <link rel="stylesheet" href="/vite/<%= manifest['src/main.jsx']['css']&.first %>" />
+      <script type="module" src="/vite/<%= manifest['src/main.jsx']['file'] %>"></script>
+    <% end %>
+  </head>
+  <body style="margin: 0;">
+    <div id="root"></div>
+  </body>
+</html>

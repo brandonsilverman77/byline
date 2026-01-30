@@ -1,8 +1,8 @@
 class WelcomeController < ApplicationController
-  
-  
-  def index 
-    home
+  layout 'vite'
+
+  def index
+    render 'welcome/vite'
   end
   
   def logout 
