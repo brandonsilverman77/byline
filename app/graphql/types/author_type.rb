@@ -10,9 +10,9 @@ module Types
     field :twitter_profile_image_url, String, null: true
     field :twitter_id, String, null: true
     field :featured, Boolean, null: false
-    field :object_id, Integer, null: false
-    
-    def object_id
+    field :object_id, Integer, null: false, resolver_method: :resolve_object_id, method_conflict_warning: false
+
+    def resolve_object_id
       object.id
     end
 
