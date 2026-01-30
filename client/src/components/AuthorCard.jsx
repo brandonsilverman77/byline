@@ -1,56 +1,17 @@
 export default function AuthorCard({ author, onFollow, isFollowing }) {
-  const publications = author.domains?.nodes?.map(d => d.host).slice(0, 3) || []
-  const authorImage = author.twitterProfileImageUrl || author.imageUrl
-
   return (
     <div className="bg-white/5 border border-white/10 rounded-2xl p-6 hover:bg-white/[0.07] transition-all duration-200">
-      <div className="flex items-start gap-4">
-        {/* Author image */}
-        <div className="flex-shrink-0">
-          {authorImage ? (
-            <img
-              src={authorImage}
-              alt={author.name}
-              className="w-16 h-16 rounded-full object-cover"
-            />
-          ) : (
-            <div className="w-16 h-16 rounded-full bg-byline-gold/20 flex items-center justify-center">
-              <span className="text-byline-gold text-xl font-display font-bold">
-                {author.name?.charAt(0) || '?'}
-              </span>
-            </div>
-          )}
-        </div>
+      {/* Author info */}
+      <div>
+        <h3 className="font-display text-lg font-bold text-white">
+          {author.name}
+        </h3>
 
-        {/* Author info */}
-        <div className="flex-1 min-w-0">
-          <h3 className="font-display text-lg font-bold text-white truncate">
-            {author.name}
-          </h3>
-
-          {author.twitterHandle && (
-            <a
-              href={`https://twitter.com/${author.twitterHandle}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              className="text-white/40 text-sm hover:text-byline-gold transition-colors"
-            >
-              @{author.twitterHandle}
-            </a>
-          )}
-
-          {publications.length > 0 && (
-            <p className="text-white/50 text-sm mt-1 truncate">
-              {publications.join(' · ')}
-            </p>
-          )}
-
-          {author.bio && (
-            <p className="text-white/40 text-sm mt-2 line-clamp-2">
-              {author.bio}
-            </p>
-          )}
-        </div>
+        {author.bio && (
+          <p className="text-white/50 text-sm mt-2 line-clamp-3">
+            {author.bio}
+          </p>
+        )}
       </div>
 
       {/* Follow button */}

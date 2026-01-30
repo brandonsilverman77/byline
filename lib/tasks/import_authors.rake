@@ -164,6 +164,78 @@ namespace :authors do
     puts "MERGE COMPLETE"
     puts "=" * 60
   end
+
+  desc "Delete all author records that have multiple authors (contain 'and' or ',')"
+  task :delete_multi_author_records => :environment do
+    puts "=" * 60
+    puts "DELETING MULTI-AUTHOR RECORDS"
+    puts "=" * 60
+
+    # Find authors with "and" in the name (co-author bylines)
+    multi_and = Author.where("name LIKE '% and %'").where(featured: false)
+    # Find authors with commas in the name
+    multi_comma = Author.where("name LIKE '%,%'").where(featured: false)
+
+    puts "Authors with 'and' in name: #{multi_and.count}"
+    puts "Authors with commas in name: #{multi_comma.count}"
+
+    # Combine and dedupe
+    multi_author_ids = (multi_and.pluck(:id) + multi_comma.pluck(:id)).uniq
+    puts "Total unique multi-author records to delete: #{multi_author_ids.count}"
+
+    # Check for any with subscriptions (we should preserve those)
+    with_subs = UserAuthor.where(author_id: multi_author_ids).distinct.pluck(:author_id)
+    if with_subs.any?
+      puts "\nWARNING: #{with_subs.count} multi-author records have subscriptions and will be skipped"
+      multi_author_ids -= with_subs
+    end
+
+    puts "\nDeleting #{multi_author_ids.count} multi-author records..."
+
+    # Delete in batches
+    deleted = 0
+    multi_author_ids.each_slice(1000) do |batch|
+      # First delete the author_articles
+      AuthorArticle.where(author_id: batch).delete_all
+      # Then delete the authors
+      deleted += Author.where(id: batch).delete_all
+      puts "  Deleted #{deleted}/#{multi_author_ids.count}..."
+    end
+
+    puts "\n" + "=" * 60
+    puts "DELETION COMPLETE"
+    puts "=" * 60
+    puts "Multi-author records deleted: #{deleted}"
+    puts "Records with subscriptions (preserved): #{with_subs.count}"
+  end
+
+  desc "Preview multi-author records that would be deleted (dry run)"
+  task :delete_multi_author_preview => :environment do
+    puts "=" * 60
+    puts "MULTI-AUTHOR DELETION PREVIEW (DRY RUN)"
+    puts "=" * 60
+
+    multi_and = Author.where("name LIKE '% and %'").where(featured: false)
+    multi_comma = Author.where("name LIKE '%,%'").where(featured: false)
+
+    puts "Authors with 'and' in name: #{multi_and.count}"
+    puts "Sample:"
+    multi_and.limit(10).each { |a| puts "  - #{a.name.truncate(60)}" }
+
+    puts "\nAuthors with commas in name: #{multi_comma.count}"
+    puts "Sample:"
+    multi_comma.limit(10).each { |a| puts "  - #{a.name.truncate(60)}" }
+
+    multi_author_ids = (multi_and.pluck(:id) + multi_comma.pluck(:id)).uniq
+    with_subs = UserAuthor.where(author_id: multi_author_ids).distinct.count
+
+    puts "\n" + "=" * 60
+    puts "PREVIEW SUMMARY"
+    puts "=" * 60
+    puts "Total would delete: #{multi_author_ids.count}"
+    puts "Have subscriptions (would preserve): #{with_subs}"
+    puts "\nRun 'rake authors:delete_multi_author_records' to apply."
+  end
 end
 
 namespace :cleanup do
