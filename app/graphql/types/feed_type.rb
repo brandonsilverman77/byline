@@ -1,5 +1,5 @@
 class Types::FeedType < Types::BaseObject
-  implements GraphQL::Relay::Node.interface
+  implements GraphQL::Types::Relay::Node
   
   global_id_field :id
   field :object_id, Integer, null: false, resolve: ->(obj, args, ctx) do 

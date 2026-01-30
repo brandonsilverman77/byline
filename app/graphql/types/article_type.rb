@@ -1,6 +1,6 @@
 module Types
   class ArticleType < Types::BaseObject
-    implements GraphQL::Relay::Node.interface
+    implements GraphQL::Types::Relay::Node
     
     global_id_field :id
     field :title, String, null: true
