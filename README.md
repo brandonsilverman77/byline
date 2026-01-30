@@ -20,4 +20,4 @@
 
 wishlist
 - fetch image for article
-- show 'stats' (followers, article frequency)
+- show 'stats' (followers, article frequency)# Trigger rebuild
