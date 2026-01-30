@@ -270,8 +270,8 @@ namespace :authors do
       weeks = 90.0 / 7.0
       per_week = recent / weeks
 
-      # Add to 'prolific' if writing 3+ articles per week
-      if per_week >= 3.0
+      # Add to 'prolific' if writing 1+ articles per week
+      if per_week >= 1.0
         unless author.categories.include?(prolific_category)
           author.categories << prolific_category
           changes << 'prolific'
@@ -342,7 +342,7 @@ namespace :authors do
       weeks = 90.0 / 7.0
       per_week = recent / weeks
 
-      if per_week >= 3.0
+      if per_week >= 1.0
         changes << 'prolific'
       end
 
