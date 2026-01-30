@@ -89,8 +89,8 @@ const styles = theme => ({
   headlineText: {
     display: 'block',
     animation: '$slideUp 1s cubic-bezier(0.16, 1, 0.3, 1) forwards',
-    opacity: 0,
-    transform: 'translateY(100%)',
+    opacity: 1,
+    transform: 'translateY(0)',
   },
 
   headlineLine1: {
@@ -135,7 +135,7 @@ const styles = theme => ({
     lineHeight: 1.7,
     opacity: 0.7,
     animation: '$fadeIn 1s ease 0.6s forwards',
-    opacity: 0,
+    opacity: 1,
   },
 
   heroCta: {
@@ -144,7 +144,7 @@ const styles = theme => ({
     alignItems: 'flex-end',
     gap: '1.5rem',
     animation: '$fadeIn 1s ease 0.8s forwards',
-    opacity: 0,
+    opacity: 1,
     
     [theme.breakpoints.down('md')]: {
       alignItems: 'flex-start',
@@ -193,7 +193,7 @@ const styles = theme => ({
     alignItems: 'center',
     gap: '0.75rem',
     animation: '$fadeIn 1s ease 1.2s forwards, $float 2s ease-in-out infinite 1.5s',
-    opacity: 0,
+    opacity: 1,
   },
 
   scrollText: {
