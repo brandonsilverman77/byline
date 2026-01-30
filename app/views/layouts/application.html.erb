@@ -35,8 +35,8 @@
     <%#= stylesheet_link_tag 'application', media: 'all' %>
     
     <% if Rails.env.production? %>
-    <%= stylesheet_link_tag 'vendor', media: 'all' %>
-    <%= stylesheet_link_tag 'webpack-bundle', media: 'all' %>
+    <%#= stylesheet_link_tag 'vendor', media: 'all' %>
+    <%#= stylesheet_link_tag 'webpack-bundle', media: 'all' %>
     <% end %>
     
     <%= javascript_include_tag "runtime" %>
