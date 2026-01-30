@@ -236,6 +236,137 @@ namespace :authors do
     puts "Have subscriptions (would preserve): #{with_subs}"
     puts "\nRun 'rake authors:delete_multi_author_records' to apply."
   end
+
+  desc "Auto-assign categories to featured authors based on frequency and bio keywords"
+  task :auto_categorize => :environment do
+    puts "=" * 60
+    puts "AUTO-CATEGORIZING FEATURED AUTHORS"
+    puts "=" * 60
+
+    # Create 'prolific' category if it doesn't exist
+    prolific_category = Category.find_or_create_by!(label: 'prolific')
+    puts "Prolific category ID: #{prolific_category.id}"
+
+    # Get existing categories
+    politics_cat = Category.find_by(label: 'politics')
+    tech_cat = Category.find_by(label: 'tech')
+    culture_cat = Category.find_by(label: 'culture')
+    sports_cat = Category.find_by(label: 'sports')
+
+    # Keywords for auto-categorization
+    politics_keywords = %w[politics political policy economist government democracy congress senate legislation vote voting election president congress liberal conservative democrat republican]
+    tech_keywords = %w[tech technology software silicon programmer engineer startup crypto ai artificial intelligence platform digital internet web app developer]
+    culture_keywords = %w[culture writer author novelist book literature art music film movie television entertainment media critic creative]
+    sports_keywords = %w[sports basketball football baseball soccer hockey nba nfl mlb athlete game team player coach]
+
+    updated_count = 0
+    prolific_count = 0
+
+    Author.where(featured: true).find_each do |author|
+      changes = []
+
+      # Calculate articles per week
+      recent = author.articles.where('published_at > ?', 90.days.ago).count
+      weeks = 90.0 / 7.0
+      per_week = recent / weeks
+
+      # Add to 'prolific' if writing 3+ articles per week
+      if per_week >= 3.0
+        unless author.categories.include?(prolific_category)
+          author.categories << prolific_category
+          changes << 'prolific'
+          prolific_count += 1
+        end
+      end
+
+      # Auto-categorize based on bio keywords (only if not already categorized)
+      bio_lower = (author.bio || '').downcase
+
+      if politics_cat && !author.categories.include?(politics_cat)
+        if politics_keywords.any? { |kw| bio_lower.include?(kw) }
+          author.categories << politics_cat
+          changes << 'politics'
+        end
+      end
+
+      if tech_cat && !author.categories.include?(tech_cat)
+        if tech_keywords.any? { |kw| bio_lower.include?(kw) }
+          author.categories << tech_cat
+          changes << 'tech'
+        end
+      end
+
+      if culture_cat && !author.categories.include?(culture_cat)
+        if culture_keywords.any? { |kw| bio_lower.include?(kw) }
+          author.categories << culture_cat
+          changes << 'culture'
+        end
+      end
+
+      if sports_cat && !author.categories.include?(sports_cat)
+        if sports_keywords.any? { |kw| bio_lower.include?(kw) }
+          author.categories << sports_cat
+          changes << 'sports'
+        end
+      end
+
+      if changes.any?
+        puts "  #{author.name}: added [#{changes.join(', ')}]"
+        updated_count += 1
+      end
+    end
+
+    puts "\n" + "=" * 60
+    puts "AUTO-CATEGORIZATION COMPLETE"
+    puts "=" * 60
+    puts "Authors updated: #{updated_count}"
+    puts "Authors marked as prolific: #{prolific_count}"
+  end
+
+  desc "Preview auto-categorization (dry run)"
+  task :auto_categorize_preview => :environment do
+    puts "=" * 60
+    puts "AUTO-CATEGORIZATION PREVIEW (DRY RUN)"
+    puts "=" * 60
+
+    politics_keywords = %w[politics political policy economist government democracy]
+    tech_keywords = %w[tech technology software silicon programmer startup crypto ai]
+    culture_keywords = %w[culture writer author novelist book literature art music film]
+    sports_keywords = %w[sports basketball football baseball soccer hockey nba nfl]
+
+    Author.where(featured: true).find_each do |author|
+      changes = []
+
+      # Calculate articles per week
+      recent = author.articles.where('published_at > ?', 90.days.ago).count
+      weeks = 90.0 / 7.0
+      per_week = recent / weeks
+
+      if per_week >= 3.0
+        changes << 'prolific'
+      end
+
+      bio_lower = (author.bio || '').downcase
+      changes << 'politics' if politics_keywords.any? { |kw| bio_lower.include?(kw) }
+      changes << 'tech' if tech_keywords.any? { |kw| bio_lower.include?(kw) }
+      changes << 'culture' if culture_keywords.any? { |kw| bio_lower.include?(kw) }
+      changes << 'sports' if sports_keywords.any? { |kw| bio_lower.include?(kw) }
+
+      current_cats = author.categories.pluck(:label)
+      new_cats = changes - current_cats
+
+      if new_cats.any?
+        puts "  #{author.name}:"
+        puts "    Current: [#{current_cats.join(', ')}]"
+        puts "    Would add: [#{new_cats.join(', ')}]"
+        puts "    Bio: #{author.bio&.truncate(80) || '(no bio)'}"
+      end
+    end
+
+    puts "\n" + "=" * 60
+    puts "Run 'rake authors:auto_categorize' to apply."
+    puts "=" * 60
+  end
 end
 
 namespace :cleanup do
