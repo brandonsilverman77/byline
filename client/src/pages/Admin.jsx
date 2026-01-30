@@ -1,5 +1,20 @@
 import { useState } from 'react'
-import { useMutation, gql } from '@apollo/client'
+import { useMutation, useQuery, gql } from '@apollo/client'
+
+const GET_ADMIN_STATS = gql`
+  query GetAdminStats {
+    admin {
+      stats {
+        totalUsers
+        activeUsers
+        usersWithSubscriptions
+        totalSubscriptions
+        totalAuthors
+        totalFeeds
+      }
+    }
+  }
+`
 
 const CREATE_FEED = gql`
   mutation CreateFeed($input: CreateFeedInput!) {
@@ -13,6 +28,11 @@ export default function Admin({ user }) {
   const [url, setUrl] = useState('')
   const [error, setError] = useState('')
   const [success, setSuccess] = useState(false)
+
+  const { data: statsData, loading: statsLoading } = useQuery(GET_ADMIN_STATS, {
+    skip: !user,
+  })
+  const stats = statsData?.admin?.stats
 
   const [createFeed, { loading }] = useMutation(CREATE_FEED, {
     onCompleted: (data) => {
@@ -68,6 +88,53 @@ export default function Admin({ user }) {
         <h1 className="font-display text-4xl font-black text-white mb-8">
           Admin Panel
         </h1>
+
+        {/* Stats Section */}
+        <div className="bg-white/5 border border-white/10 rounded-2xl p-8 mb-8">
+          <h2 className="font-display text-xl font-bold text-white mb-6">
+            Platform Stats
+          </h2>
+
+          {statsLoading ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              {[1, 2, 3, 4, 5, 6].map((i) => (
+                <div key={i} className="bg-white/5 rounded-lg p-4 animate-pulse">
+                  <div className="h-8 bg-white/10 rounded mb-2" />
+                  <div className="h-4 bg-white/10 rounded w-2/3" />
+                </div>
+              ))}
+            </div>
+          ) : stats ? (
+            <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
+              <div className="bg-white/5 rounded-lg p-4">
+                <div className="text-3xl font-bold text-byline-gold">{stats.totalUsers}</div>
+                <div className="text-white/50 text-sm">Total Users</div>
+              </div>
+              <div className="bg-white/5 rounded-lg p-4">
+                <div className="text-3xl font-bold text-byline-gold">{stats.activeUsers}</div>
+                <div className="text-white/50 text-sm">Active Users</div>
+              </div>
+              <div className="bg-white/5 rounded-lg p-4">
+                <div className="text-3xl font-bold text-byline-gold">{stats.usersWithSubscriptions}</div>
+                <div className="text-white/50 text-sm">Users with Subscriptions</div>
+              </div>
+              <div className="bg-white/5 rounded-lg p-4">
+                <div className="text-3xl font-bold text-byline-gold">{stats.totalSubscriptions}</div>
+                <div className="text-white/50 text-sm">Total Subscriptions</div>
+              </div>
+              <div className="bg-white/5 rounded-lg p-4">
+                <div className="text-3xl font-bold text-byline-gold">{stats.totalAuthors}</div>
+                <div className="text-white/50 text-sm">Authors</div>
+              </div>
+              <div className="bg-white/5 rounded-lg p-4">
+                <div className="text-3xl font-bold text-byline-gold">{stats.totalFeeds}</div>
+                <div className="text-white/50 text-sm">RSS Feeds</div>
+              </div>
+            </div>
+          ) : (
+            <p className="text-white/50">Unable to load stats</p>
+          )}
+        </div>
 
         <div className="bg-white/5 border border-white/10 rounded-2xl p-8">
           <h2 className="font-display text-xl font-bold text-white mb-6">
