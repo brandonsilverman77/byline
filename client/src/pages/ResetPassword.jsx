@@ -45,6 +45,9 @@ export default function ResetPassword({ user, onLogout, onLoginRequired }) {
     try {
       const csrfToken = document.querySelector('meta[name="csrf-token"]')?.getAttribute('content')
 
+      console.log('Resetting password with token:', token)
+      console.log('Token length:', token?.length)
+
       const response = await fetch('/password/update', {
         method: 'PATCH',
         headers: {
@@ -53,6 +56,8 @@ export default function ResetPassword({ user, onLogout, onLoginRequired }) {
         },
         body: JSON.stringify({ token, password }),
       })
+
+      console.log('Response status:', response.status)
 
       const data = await response.json()
 
