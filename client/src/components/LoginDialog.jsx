@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { useMutation } from '@apollo/client'
 import { LOGIN } from '../graphql/mutations'
 
-export default function LoginDialog({ isOpen, onClose, onSuccess }) {
+export default function LoginDialog({ isOpen, onClose, onSuccess, onForgotPassword }) {
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [error, setError] = useState('')
@@ -86,7 +86,7 @@ export default function LoginDialog({ isOpen, onClose, onSuccess }) {
             />
           </div>
 
-          <div className="mb-6">
+          <div className="mb-4">
             <label htmlFor="password" className="block text-white/70 text-sm mb-2">
               Password
             </label>
@@ -98,6 +98,19 @@ export default function LoginDialog({ isOpen, onClose, onSuccess }) {
               className="w-full bg-white/5 border border-white/10 rounded-lg px-4 py-3 text-white placeholder-white/30 focus:outline-none focus:border-byline-gold/50 focus:ring-2 focus:ring-byline-gold/20 transition-all"
               placeholder="••••••••"
             />
+          </div>
+
+          <div className="mb-6 text-right">
+            <button
+              type="button"
+              onClick={() => {
+                onClose()
+                onForgotPassword && onForgotPassword()
+              }}
+              className="text-sm text-byline-gold hover:text-byline-gold-bright transition-colors"
+            >
+              Forgot password?
+            </button>
           </div>
 
           <button

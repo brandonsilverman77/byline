@@ -10,6 +10,9 @@ Rails.application.routes.draw do
   get '/test', to: 'welcome#test'
   get '/about', to: 'welcome#index'
   get '/unsubscribe', to: 'welcome#unsubscribe'
+  get '/reset-password', to: 'welcome#index'
+  post '/password/reset', to: 'passwords#create'
+  patch '/password/update', to: 'passwords#update'
   resources :feeds
   # For details on the DSL available within this file, see http://guides.rubyonrails.org/routing.html
 end
