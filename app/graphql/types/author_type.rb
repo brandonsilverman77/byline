@@ -32,9 +32,23 @@ module Types
     end
     
     field :domains, DomainType.connection_type, null: false
-    
+
     def domains
       object.domains
+    end
+
+    field :articles_per_week, Float, null: false, description: "Average number of articles published per week"
+
+    def articles_per_week
+      # Get articles from the last 90 days to calculate a reliable average
+      recent_articles = object.articles.where('published_at > ?', 90.days.ago)
+      count = recent_articles.count
+
+      return 0.0 if count == 0
+
+      # Calculate weeks (90 days = ~12.86 weeks)
+      weeks = 90.0 / 7.0
+      (count / weeks).round(1)
     end
   end
 end

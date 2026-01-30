@@ -23,19 +23,9 @@ export const GET_AUTHORS = gql`
           objectId
           name
           bio
-          twitterHandle
-          twitterProfileImageUrl
-          imageUrl
           featured
           subscribed
-          categoryIds
-          domains {
-            nodes {
-              id
-              objectId
-              host
-            }
-          }
+          articlesPerWeek
         }
       }
     }
