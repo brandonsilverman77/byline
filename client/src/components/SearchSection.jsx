@@ -21,11 +21,14 @@ export default function SearchSection({ user, onLoginRequired }) {
     return () => clearTimeout(timer)
   }, [searchTerm])
 
-  const { data: categoriesData, loading: categoriesLoading } = useQuery(GET_CATEGORIES)
+  const { data: categoriesData, loading: categoriesLoading, error: categoriesError } = useQuery(GET_CATEGORIES)
   const categories = categoriesData?.app?.categories?.nodes || []
 
+  // Log categories for debugging
+  console.log('Categories data:', categoriesData, 'error:', categoriesError)
+
   const shouldFetch = debouncedSearch || selectedCategory
-  const { data: authorsData, loading: authorsLoading } = useQuery(GET_AUTHORS, {
+  const { data: authorsData, loading: authorsLoading, error: authorsError } = useQuery(GET_AUTHORS, {
     variables: {
       search: debouncedSearch || undefined,
       categories: selectedCategory ? [selectedCategory] : undefined,
@@ -33,6 +36,12 @@ export default function SearchSection({ user, onLoginRequired }) {
     skip: !shouldFetch,
   })
   const authors = authorsData?.app?.authors?.nodes || []
+
+  // Log authors for debugging
+  if (shouldFetch) {
+    console.log('Authors query - search:', debouncedSearch, 'category:', selectedCategory)
+    console.log('Authors data:', authorsData, 'error:', authorsError)
+  }
 
   const [subscribeToAuthor] = useMutation(SUBSCRIBE_TO_AUTHOR, {
     refetchQueries: ['GetAuthors'],
@@ -106,6 +115,13 @@ export default function SearchSection({ user, onLoginRequired }) {
             loading={categoriesLoading}
           />
         </div>
+
+        {/* Error display */}
+        {(categoriesError || authorsError) && (
+          <div className="mb-8 p-4 bg-red-500/10 border border-red-500/30 rounded-lg text-red-400">
+            <p>Error loading data: {categoriesError?.message || authorsError?.message}</p>
+          </div>
+        )}
 
         {/* Results */}
         {hasSearched && (
