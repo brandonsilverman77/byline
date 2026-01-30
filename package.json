@@ -6,7 +6,7 @@
   },
   "scripts": {
     "relay": "rake graphql_schema && relay-compiler --src ./client --schema ./schema.json --extensions js jsx",
-    "webpack": "webpack --env.production",
+    "webpack": "webpack --env production",
     "watch": "webpack --watch --progress --info-verbosity verbose --env.development",
     "serve": "yarn watch & rails s & sidekiq"
   },
